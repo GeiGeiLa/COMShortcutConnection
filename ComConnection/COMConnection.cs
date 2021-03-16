@@ -5,11 +5,13 @@ using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 // My using directives
 using static ComConnection.StringLiterals;
 #nullable enable
 namespace ComConnection
 {
+
     class COMConnection : IDisposable
     {
         /// <summary>
@@ -17,24 +19,13 @@ namespace ComConnection
         /// </summary>
         public readonly uint ListenInterval;
         /// <summary>
-        /// 外面請自己用 using statement包起來！
-        /// </summary>
-        /// <param name="ComString">COM的名稱</param>        
-        public COMConnection(string ComString, int baudRate = 115200, uint listenIntervalMs = 1000)
-        {
-            CurrentPort = new SerialPort(ComString, baudRate);
-            COM_name = ComString;
-            this.ListenInterval = listenIntervalMs < 100 ? listenIntervalMs: 1000;
-            MessageFromCOM = "";
-        }
-        /// <summary>
         /// 來自 input buffer 的內容
         /// </summary>
         public string MessageFromCOM { get; private set; }
         /// <summary>
-        /// 我們要吐給 COM 的指令
+        /// 我們要吐給 COM 的指令，以 byte[1]傳送
         /// </summary>
-        public string OurCommand = "";
+        public byte[] CommandBuffer = new byte[1];
         public readonly string COM_name;
         /// <summary>
         /// SerialPort 連線物件
@@ -43,7 +34,7 @@ namespace ComConnection
         /// <summary>
         /// 是否正在連線
         /// </summary>
-        public bool IsConnected 
+        public bool IsConnected
         {
             get
             {
@@ -51,55 +42,37 @@ namespace ComConnection
             }
         }
         /// <summary>
-        /// Whether COM accepts our commands 
+        /// When there are things available in COM port
         /// </summary>
-        public bool IsListening { get; private set; }
+        public event SerialDataReceivedEventHandler DataReceived;
         /// <summary>
-        /// COM starts listening to Commands<br/>
-        /// It is recommended to do this in a new thread
         /// </summary>
-        public async void StartListening()
+        /// <param name="ComString">COM的名稱</param>        
+        public COMConnection(string ComString, int baudRate = 115200, uint listenIntervalMs = 1000)
         {
-            var buffer = new byte[1024];
-            try
-            {
-                while(this.IsListening)
-                {
-                    if (this.HasThingToRead)
-                    {
-
-                    }
-
-                    Task.Delay(1000);
-                }
-            }
-            catch(Exception ex)
-            {
-
-            }
-            finally
-            {
-
-            }
+            CurrentPort = new SerialPort(ComString, baudRate);
+            COM_name = ComString;
+            this.ListenInterval = listenIntervalMs < 100 ? listenIntervalMs : 1000;
+            // Subscribe to event that occur when data is available
+            this.DataReceived = new SerialDataReceivedEventHandler(PrintCOMMessage);
+            MessageFromCOM = "";
         }
-
 
         /// <exception cref="InvalidOperationException"> 已經有其他連線時丟出 </exception>
         /// <exception cref="IOException"> 連線失敗時丟出 </exception>
         public virtual void Connect()
         {
-            if (IsConnected) throw new InvalidOperationException("Port already opened");
+            if (IsConnected) throw new InvalidOperationException(InvalidOperation);
             CurrentPort.DataBits = 8;
             CurrentPort.StopBits = StopBits.One;
             CurrentPort.Open();
-            if (!IsConnected) throw new IOException("Cannot connect to the port");
+            if (!IsConnected) throw new IOException(ConnectionFailed);
         }
         /// <exception cref="InvalidOperationException"> 根本沒有連線時丟出 </exception>
         public virtual void Disconnect()
         {
             if (!IsConnected) throw new InvalidOperationException("Nothing is connected");
             CurrentPort.Close();
-            this.IsListening = false;
         }
         /// <summary>
         /// 為了要搭配 using statement，需要實作 IDisposable 的 Dispose()
@@ -113,7 +86,7 @@ namespace ComConnection
         /// <exception cref="IOException">  </exception>
         protected void CheckConnection()
         {
-            if (!IsConnected) throw new IOException("COM connection lost");
+            if (!IsConnected) throw new IOException(ConnectionLost);
         }
         /// <summary>
         /// 還有沒有東西可以讀取
@@ -168,37 +141,27 @@ namespace ComConnection
                 "";
         }
         /// <summary>
-        /// 當input buffer有東西時會自動呼叫此函式
+        /// 印出東西，應該被 Event Handler 包住
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void On_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        private void PrintCOMMessage(object sender, SerialDataReceivedEventArgs e)
         {
             this.MessageFromCOM = this.ReadAllContent();
+            Debug.WriteLine(this.MessageFromCOM);
         }
-        private bool _isEventSet;
-        /// <summary>
-        /// 設定觸發事件來新增至Message
-        /// </summary>
-        public void SetOn_DataReceived()
+        public void WriteByte(byte[] buffer, int offset = 0, int count = 1)
         {
-            if (_isEventSet) return;
-            CurrentPort.DataReceived += new SerialDataReceivedEventHandler(On_DataReceived);
-            _isEventSet = true;
+            if(buffer.Length != 1)
+            {
+                throw new ArgumentOutOfRangeException("buffer[] Length must be 1");
+            }
+            this.CurrentPort.Write(buffer, offset, count);
         }
         public void Write(string data)
         {
             CheckConnection();
             CurrentPort.Write(data);
-        }
-        public void WriteLine(string data)
-        {
-            this.Write(data+"\n");
-        }
-        public void WriteByte(byte[] data, int offset, int length)
-        {
-            CheckConnection();
-            CurrentPort.Write(data, offset, length);
         }
         public void WriteCharArray(char[] data, int offset, int length)
         {

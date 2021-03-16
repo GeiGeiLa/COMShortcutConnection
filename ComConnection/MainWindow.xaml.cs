@@ -48,7 +48,7 @@ namespace ComConnection
 
             if(this.SelectedCOMPort != "")
             {
-                Connect_Button.IsEnabled = true;
+                btn_Connect.IsEnabled = true;
             }
 
         }
@@ -62,7 +62,7 @@ namespace ComConnection
             this.SelectedCOMPort = "";
             COMSelector.Items.Clear();
             var ports = System.IO.Ports.SerialPort.GetPortNames();
-            Connect_Button.IsEnabled = false;
+            btn_Connect.IsEnabled = false;
             foreach (var p in ports)
             {
                 COMSelector.Items.Add(p);
@@ -71,7 +71,7 @@ namespace ComConnection
             {
                 COMSelector.SelectedIndex = 0;
                 this.SelectedCOMPort = ports[0];
-                Connect_Button.IsEnabled = true;
+                btn_Connect.IsEnabled = true;
             }
         }
 
@@ -87,18 +87,16 @@ namespace ComConnection
             catch(Exception ex)
             {
                 MessageBox.Show(ConnectionFailed+"，再試試看？");
+                Debug.WriteLine("Exception thrown:" + ex.Message);
                 Connection.Dispose();
             }
         }
 
-        private async void Btn_Clear_Click(object sender, RoutedEventArgs e)
+        private void Btn_Clear_Click(object sender, RoutedEventArgs e)
         {
             var btn = sender as Button ?? throw new InvalidCastException();
             btn.IsEnabled = false;
-            await Task.Run(() =>
-            {
-                Task.Delay(3000);
-            });
+            Connection?.WriteByte()
             btn.IsEnabled = true;
         }
 

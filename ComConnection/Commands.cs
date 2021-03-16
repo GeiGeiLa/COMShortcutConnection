@@ -6,35 +6,29 @@ using System.Threading.Tasks;
 #nullable enable
 namespace ComConnection
 {
-    static class Commands
+    readonly struct Commands
     {
-        const string Suffix = "AA";
-        // Time settings
-        const string setTime_Prefix = "550106";
-        const string ackTime_Prefix = "550101";
-        const string ackTime_Error = "00";
-        const string ackTime_Success = "01";
-        // Restart and start recording
-        const string setRestart_Prefix = "550201";
-        const string ackRestart_Prefix = "02";
-        // Erase flash data
-        const string setErase_Prefix = "55030200FF";
-        const string ackErase_Prefix = "550301";
-        const string ackErase_Error = "00";
-        const string ackErase_InProgress = "01";
-        const string ackErase_Success = "02";
-        // Get Total Page Number
-        const string setPageSize_Prefix = "550400";
-        const string ackPageSize_Prefix = "550404";
-        // Get Page[N]
-        const string setPageIndex_Prefix = "550504";
-        const string ackPageIndex_Prefix = "5505FF";// Need checksum after payload bytes
-        const string ackPageIndex_Error_Prefix = "550501";
-        const string ackPageIndex_Error_NotInitial = "00";
-        const string ackPageIndex_Error_General = "FF";
-        // Record to UART
-        const string setToUART_Whole = "AAAAAAAAAAAAAA";
-        const string ackToUART_Whole = "55060000AA";
+        public static readonly byte Suffix = 0xAA;
+        public static readonly byte[] setTime_Prefix = { 0x55, 0x01, 0x06 };
+        public static readonly byte[] ackTime_Prefix = { 0x55, 0x01, 0x01 };
+        public static readonly byte[] ackTime_Error = { 0x00, 0xAA };
+        public static readonly byte[] ackTime_Success = { 0x01, 0xAA };
+        public static readonly byte[] setRestart_Prefix = { 0x55, 0x02, 0x01 };
+        public static readonly byte[] ackRestart_Prefix = { 0x02 };
+        public static readonly byte[] setErase_Prefix = { 0x55, 0x03, 0x02, 0x00, 0xFF };
+        public static readonly byte[] ackErase_Prefix = {0x55,0x03,0x01};
+        public static readonly byte[] ackErase_Error = { 0x00, 0xAA };
+        public static readonly byte[] ackErase_InProgress = { 0x01, 0xAA };
+        public static readonly byte[] ackErase_Success = { 0x02, 0xAA };
+        public static readonly byte[] setPageSize_Prefix = { 0x55, 0x04, 0x00 };
+        public static readonly byte[] ackPageSize_Prefix = { 0x55, 0x04, 0x04 };
+        public static readonly byte[] setPageIndex_Prefix = { 0x55,0x05,0x04 };
+        public static readonly byte[] ackPageIndex_Prefix = { 0x55, 0x05, 0xFF };// Need checksum after payload bytes
+        public static readonly byte[] ackPageIndex_Error_Prefix = { 0x55, 0x05, 0x01 };
+        public static readonly byte[] ackPageIndex_Error_NotInitial = { 0x00, 0xAA };
+        public static readonly byte[] ackPageIndex_Error_General = { 0xFF, 0xAA };
+        public static readonly byte[] setToUART_Whole = {0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
+        public static readonly byte[] ackToUART_Whole = { 0x55, 0x06, 0x00, 0x00, 0xAA };
         /// <summary>
         /// 根據給定的Payload片段去解讀目前ACC有幾頁資料
         /// </summary>
