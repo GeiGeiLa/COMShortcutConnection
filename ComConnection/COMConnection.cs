@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 // My using directives
 using static ComConnection.StringLiterals;
+using static ComConnection.Commands;
 #nullable enable
 namespace ComConnection
 {

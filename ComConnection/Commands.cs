@@ -8,25 +8,40 @@ namespace ComConnection
 {
     readonly struct Commands
     {
-        public static readonly byte Suffix = 0xAA;
+        public const int NumOfBytes = 300;
+        /// <summary>
+        /// Suffix for all commands except those marked as WHOLE
+        /// </summary>
+        public static readonly byte[] Suffix = { 0xAA };
         public static readonly byte[] setTime_Prefix = { 0x55, 0x01, 0x06 };
         public static readonly byte[] ackTime_Prefix = { 0x55, 0x01, 0x01 };
-        public static readonly byte[] ackTime_Error = { 0x00, 0xAA };
-        public static readonly byte[] ackTime_Success = { 0x01, 0xAA };
+        public static readonly byte[] ackTime_Error_Payload = { 0x00, 0xAA };
+        public static readonly byte[] ackTime_Success_Payload = { 0x01, 0xAA };
+        // Restart
         public static readonly byte[] setRestart_Prefix = { 0x55, 0x02, 0x01 };
-        public static readonly byte[] ackRestart_Prefix = { 0x02 };
-        public static readonly byte[] setErase_Prefix = { 0x55, 0x03, 0x02, 0x00, 0xFF };
-        public static readonly byte[] ackErase_Prefix = {0x55,0x03,0x01};
-        public static readonly byte[] ackErase_Error = { 0x00, 0xAA };
-        public static readonly byte[] ackErase_InProgress = { 0x01, 0xAA };
-        public static readonly byte[] ackErase_Success = { 0x02, 0xAA };
+        public static readonly byte[] Restart_Record_Payload = { 0x01 };
+        public static readonly byte[] Restart_UART_Payload = { 0x02 };
+        public static readonly byte[] Restart_BLE_Payload = { 0x03 };
+        public static readonly byte[] ackRestart_Whole = { 0x02 };
+        // Erase
+        public static readonly byte[] setErase_Prefix_Payload = { 0x55, 0x03, 0x02, 0x00, 0xFF };
+        public static readonly byte[] ackErase_Prefix_Payload = {0x55,0x03,0x01};
+        public static readonly byte[] ackErase_Error_Payload = { 0x00, 0xAA };
+        public static readonly byte[] ackErase_InProgress_Payload = { 0x01, 0xAA };
+        public static readonly byte[] ackErase_Success_Payload = { 0x02, 0xAA };
+        /// <summary>
+        /// no payload
+        /// </summary>
         public static readonly byte[] setPageSize_Prefix = { 0x55, 0x04, 0x00 };
+        /// <summary>
+        /// Payload is little-endian
+        /// </summary>
         public static readonly byte[] ackPageSize_Prefix = { 0x55, 0x04, 0x04 };
         public static readonly byte[] setPageIndex_Prefix = { 0x55,0x05,0x04 };
         public static readonly byte[] ackPageIndex_Prefix = { 0x55, 0x05, 0xFF };// Need checksum after payload bytes
         public static readonly byte[] ackPageIndex_Error_Prefix = { 0x55, 0x05, 0x01 };
-        public static readonly byte[] ackPageIndex_Error_NotInitial = { 0x00, 0xAA };
-        public static readonly byte[] ackPageIndex_Error_General = { 0xFF, 0xAA };
+        public static readonly byte[] ackPageIndex_Error_NotInitial_Payload = { 0x00, 0xAA };
+        public static readonly byte[] ackPageIndex_Error_General_Payload = { 0xFF, 0xAA };
         public static readonly byte[] setToUART_Whole = {0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA};
         public static readonly byte[] ackToUART_Whole = { 0x55, 0x06, 0x00, 0x00, 0xAA };
         /// <summary>

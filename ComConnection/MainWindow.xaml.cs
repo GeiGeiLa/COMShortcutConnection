@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
 using static ComConnection.StringLiterals;
+using static ComConnection.Commands;
 #nullable enable
 namespace ComConnection
 {
@@ -96,7 +97,8 @@ namespace ComConnection
         {
             var btn = sender as Button ?? throw new InvalidCastException();
             btn.IsEnabled = false;
-            Connection?.WriteByte()
+            Span<byte> buffer = stackalloc byte[NumOfBytes];
+            Connection?.WriteByte(setErase_Prefix_Payload.Concat(Suffix));
             btn.IsEnabled = true;
         }
 
