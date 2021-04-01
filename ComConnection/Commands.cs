@@ -33,6 +33,7 @@ namespace ComConnection
         /// no payload
         /// </summary>
         public static readonly byte[] setPageSize_Prefix = { 0x55, 0x04, 0x00 };
+        public static readonly byte[] setPageSize_PrefixReversed = { 0x0, 0x04, 0x55 };
         /// <summary>
         /// Payload is little-endian
         /// </summary>

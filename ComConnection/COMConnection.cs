@@ -22,7 +22,7 @@ namespace ComConnection
         /// <summary>
         /// 來自 input buffer 的內容
         /// </summary>
-        public string MessageFromCOM { get; private set; }
+        public byte[] MessageInBytes { get; private set; }
         /// <summary>
         /// 我們要吐給 COM 的指令，以 byte[1]傳送
         /// </summary>
@@ -42,10 +42,7 @@ namespace ComConnection
                 return CurrentPort.IsOpen;
             }
         }
-        /// <summary>
-        /// When there are things available in COM port
-        /// </summary>
-        public event SerialDataReceivedEventHandler DataReceived;
+ 
         /// <summary>
         /// </summary>
         /// <param name="ComString">COM的名稱</param>        
@@ -54,9 +51,8 @@ namespace ComConnection
             CurrentPort = new SerialPort(ComString, baudRate);
             COM_name = ComString;
             this.ListenInterval = listenIntervalMs < 100 ? listenIntervalMs : 1000;
-            // Subscribe to event that occur when data is available
-            this.DataReceived = new SerialDataReceivedEventHandler(PrintCOMMessage);
-            MessageFromCOM = "";
+            MessageInBytes = new byte[NumOfBytes];
+
         }
 
         /// <exception cref="InvalidOperationException"> 已經有其他連線時丟出 </exception>
@@ -65,6 +61,8 @@ namespace ComConnection
         {
             if (IsConnected) throw new InvalidOperationException(InvalidOperation);
             CurrentPort.DataBits = 8;
+            CurrentPort.BaudRate = 115200;
+            CurrentPort.Parity = Parity.None;
             CurrentPort.StopBits = StopBits.One;
             CurrentPort.Open();
             if (!IsConnected) throw new IOException(ConnectionFailed);
@@ -72,7 +70,7 @@ namespace ComConnection
         /// <exception cref="InvalidOperationException"> 根本沒有連線時丟出 </exception>
         public virtual void Disconnect()
         {
-            if (!IsConnected) throw new InvalidOperationException("Nothing is connected");
+            if (!IsConnected) return;
             CurrentPort.Close();
         }
         /// <summary>
@@ -97,40 +95,6 @@ namespace ComConnection
             get => (CurrentPort.BytesToRead > 0);
         }
         /// <summary>
-        /// 讀取 buffer 裡下一個 char
-        /// </summary>
-        /// <returns>null char when nothing to read</returns>
-        public char NextChar()
-        {
-            CheckConnection();
-            return HasThingToRead ?
-                (char)CurrentPort.ReadChar():
-                '\0';
-
-        }
-        /// <summary>
-        /// 讀取下一個byte
-        /// </summary>
-        /// <returns>0 when nothing to read</returns>
-        public byte NextByte()
-        {
-            CheckConnection();
-            return HasThingToRead ? 
-                (byte)CurrentPort.ReadByte():
-                0;
-        }
-        /// <summary>
-        /// 讀取一行文字
-        /// </summary>
-        /// <returns>String.Empty When nothing to read</returns>
-        public string NextLine()
-        {
-            CheckConnection();
-            return HasThingToRead ? 
-                CurrentPort.ReadLine():
-                "";
-        }
-        /// <summary>
         /// 直接讀出 buffer 所有內容
         /// </summary>
         /// <returns>String.Empty When nothing to read</returns>
@@ -142,33 +106,53 @@ namespace ComConnection
                 "";
         }
         /// <summary>
-        /// 印出東西，應該被 Event Handler 包住
+        /// 讀取Port內容 
+        /// </summary>
+        /// <returns>byte collection</returns>
+        public IEnumerable<byte> ReadBytes()
+        {
+            CheckConnection();
+            int byteElement;
+            while( (byteElement = CurrentPort.ReadByte()) != -1 )
+            {
+                yield return (byte)byteElement;
+            }
+        }
+        /// <summary>
+        /// 將接收到的訊息寫入buffer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void PrintCOMMessage(object sender, SerialDataReceivedEventArgs e)
+        public void PrintCOMMessage(object sender, SerialDataReceivedEventArgs e)
         {
-            this.MessageFromCOM = this.ReadAllContent();
-            Debug.WriteLine(this.MessageFromCOM);
+
         }
-        public void WriteByte(byte[] buffer, int offset = 0, int count = 1)
+        /// <summary>
+        /// 寫入指令到COM port
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        public void WriteBytes(byte[] buffer, int offset , int count )
         {
-            if(buffer.Length != 1)
+            try
             {
-                throw new ArgumentOutOfRangeException("buffer[] Length must be 1");
+                this.CurrentPort.Write(buffer, offset, count);
+
+            }catch(IOException ioex)
+            {
+                Debug.WriteLine(ioex.Message);
             }
-            this.CurrentPort.Write(buffer, offset, count);
         }
-        public void Write(string data)
+        public void Write(byte cmdByte, int offset, int count)
         {
-            CheckConnection();
-            CurrentPort.Write(data);
+            try
+            { 
+            }
+            catch (IOException ioex)
+            {
+                Debug.WriteLine(ioex.Message);
+            }
         }
-        public void WriteCharArray(char[] data, int offset, int length)
-        {
-            CheckConnection();
-            CurrentPort.Write(data, offset, length);
-        }
-        
     }
 }

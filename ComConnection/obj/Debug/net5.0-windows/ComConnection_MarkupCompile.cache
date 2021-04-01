@@ -8,13 +8,13 @@ C:\Fast\COMShortcutConnection-master\ComConnection\obj\Debug\net5.0-windows\
 ComConnection
 none
 false
-TRACE;DEBUG;NET;NET5_0;NETCOREAPP
+DEBUG;TRACE;DEBUG;NET;NET5_0;NETCOREAPP
 C:\Fast\COMShortcutConnection-master\ComConnection\App.xaml
 11151548125
 
-61707272342
+7-1226957508
 194-1736730273
 MainWindow.xaml;
 
-True
+False
 
