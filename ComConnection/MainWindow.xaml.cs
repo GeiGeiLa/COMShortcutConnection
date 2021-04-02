@@ -25,6 +25,7 @@ namespace ComConnection
     /// </summary>
     public partial class MainWindow : Window
     {
+        
         private const int NumOfBytes = 256;
         private byte[] MessageInBytes;
         Button[] cmdButtons;
@@ -81,7 +82,7 @@ namespace ComConnection
             if (Connection != null && Connection.IsConnected)
             {
                 Connection.Dispose();
-                COMSelector.IsEnabled = true;
+                COMSelector!.IsEnabled = true;
                 this.RefreshCOMPorts();
                 btn_Connect.Content = "連線";
             }
@@ -99,18 +100,16 @@ namespace ComConnection
                     Connection.CurrentPort.DataReceived += new SerialDataReceivedEventHandler(this.PrintCOMMessage);
                     Connection.Connect();
                     btn_Connect.Content = "斷線";
-                    var buffer = new byte[setToUART_Whole.Length];
-                    var i = new byte[] { 0x55, 0x00, 0x00, 0xAA };
-                    var rb = reversedBytes(i).ToArray();
-                    MessageBox.Show(i.BytesHexString());
-                    Connection.WriteBytes(i, 0, i.Length);
-                    COMSelector.IsEnabled = false ;
+                    var buffer = new byte[setToUART_Whole.Count];
+                    MessageBox.Show(setToUART_Whole.BytesHexString());
+                    Connection.WriteBytes(setToUART_Whole.ToArray(), 0, setToUART_Whole.Count);
+                    COMSelector!.IsEnabled = false ;
                 }
                 catch (System.IO.IOException ex)
                 {
                     MessageBox.Show(ConnectionFailed + "，再試試看？");
                     Debug.WriteLine("Exception thrown:" + ex.Message);
-                    Connection.Dispose();
+                    Connection!.Dispose();
                 }
                 catch(UnauthorizedAccessException uex)
                 {
@@ -130,19 +129,19 @@ namespace ComConnection
         }
         private void Btn_Clear_Click(object sender, RoutedEventArgs e)
         {
-            var buffer = new byte[setErase_Prefix_Payload.Length + Suffix.Length];
-            Buffer.BlockCopy(setErase_Prefix_Payload, 0, buffer, 0, setErase_Prefix_Payload.Length);
-            Buffer.BlockCopy(Suffix, 0, buffer, setErase_Prefix_Payload.Length, Suffix.Length);
-            Connection.WriteBytes(buffer, 0, buffer.Length);
+            var buffer = new byte[setErase_Prefix_Payload.Count + Suffix.Count];
+            Buffer.BlockCopy(setErase_Prefix_Payload.ToArray(), 0, buffer, 0, setErase_Prefix_Payload.Count);
+            Buffer.BlockCopy(Suffix.ToArray(), 0, buffer, setErase_Prefix_Payload.Count, Suffix.Count);
+            Connection!.WriteBytes(buffer, 0, buffer.Length);
             toggleCommandButtons(false);
         }
 
         private void btn_viewAll_Click(object sender, RoutedEventArgs e)
         {
-            var buffer = new byte[setPageSize_Prefix.Length + Suffix.Length];
-            Buffer.BlockCopy(Suffix, 0, buffer, 0, Suffix.Length);
-            Buffer.BlockCopy(setPageSize_PrefixReversed, 0, buffer, Suffix.Length, setPageSize_Prefix.Length);
-            Connection.WriteBytes(buffer, 0, buffer.Length);
+            var buffer = new byte[setPageSize_Prefix.Count + Suffix.Count];
+            Buffer.BlockCopy(setPageSize_Prefix.ToArray(), 0, buffer, 0, setPageSize_Prefix.Count);
+            Buffer.BlockCopy(Suffix.ToArray(), 0, buffer, setPageIndex_Prefix.Count, Suffix.Count);
+            Connection!.WriteBytes(buffer, 0, buffer.Length);
             toggleCommandButtons(false);
         }
 
@@ -177,7 +176,7 @@ namespace ComConnection
         /// <param name="e"></param>
         private void PrintCOMMessage(object sender, SerialDataReceivedEventArgs e)
         {
-            int messageLength = Connection.CurrentPort.Read(this.MessageInBytes, 0, this.MessageInBytes.Length);
+            int messageLength = Connection!.CurrentPort.Read(this.MessageInBytes, 0, this.MessageInBytes.Length);
             string s = BitConverter.ToString(this.MessageInBytes);
             Dispatcher.BeginInvoke(new Action(()=>
             {

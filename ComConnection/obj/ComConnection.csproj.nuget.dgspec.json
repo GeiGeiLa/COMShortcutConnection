@@ -1,20 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Fast\\COMShortcutConnection-master\\ComConnection\\ComConnection.csproj": {}
+    "C:\\Users\\polar\\source\\repos\\ComConnection\\ComConnection\\ComConnection.csproj": {}
   },
   "projects": {
-    "C:\\Fast\\COMShortcutConnection-master\\ComConnection\\ComConnection.csproj": {
+    "C:\\Users\\polar\\source\\repos\\ComConnection\\ComConnection\\ComConnection.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Fast\\COMShortcutConnection-master\\ComConnection\\ComConnection.csproj",
+        "projectUniqueName": "C:\\Users\\polar\\source\\repos\\ComConnection\\ComConnection\\ComConnection.csproj",
         "projectName": "ComConnection",
-        "projectPath": "C:\\Fast\\COMShortcutConnection-master\\ComConnection\\ComConnection.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Fast\\COMShortcutConnection-master\\ComConnection\\obj\\",
+        "projectPath": "C:\\Users\\polar\\source\\repos\\ComConnection\\ComConnection\\ComConnection.csproj",
+        "packagesPath": "C:\\Users\\polar\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\polar\\source\\repos\\ComConnection\\ComConnection\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\polar\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -63,7 +66,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.104\\RuntimeIdentifierGraph.json"
         }
       }
     }
