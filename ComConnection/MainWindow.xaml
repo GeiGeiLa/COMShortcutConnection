@@ -5,49 +5,64 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ComConnection"
         mc:Ignorable="d"
-        Title="MainWindow" Height="480" Width="800">
-    <Grid>
+        Title="MainWindow" Height="565" Width="800" ResizeMode="NoResize">
+    <Grid Margin="0,0,0,-5">
         <!--Definition-->
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
-            <RowDefinition />
+            <RowDefinition Height="450"/>
+            <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions >
-            <ColumnDefinition Width="256" />
+            <ColumnDefinition Width="250" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
         <!--Panel-->
-        <Border Grid.Row="0" Grid.Column="0" Background="LightSalmon" />
-        <Border Grid.Row="1" Grid.Column="0" Background="LightBlue" >
-            <ListBox/>
+
+        <!--Panel-->
+        <Border Grid.Row="0" Grid.Column="1" Background="Transparent" Grid.RowSpan="2">
+            <ScrollViewer>
+                <TextBox x:Name="txtblk" Text="TextBlock" BorderThickness="0" Background="Transparent" IsReadOnly="True"
+                         TextWrapping="Wrap" Margin="10,10,10,10" FontFamily="Consolas" FontSize="14" FontWeight="Normal" Height="442" Width="503"/>
+            </ScrollViewer>
+            
         </Border>
-        <Border Grid.Row="0" Grid.Column="1" Background="LightYellow" Grid.RowSpan="2">
+
+        <!--Panel-->
+        <Border Grid.Row="0" Grid.Column="0" Background="LightSalmon" />
+        <Border Grid.Row="1" Grid.Column="0" Background="LightBlue"/>
+        <Border Grid.Row="2" Grid.Column="0" Background="LightSeaGreen">
         </Border>
         <!--<Border Grid.Row="1" Grid.Column="0" Background="LightYellow" />-->
 
-       
+
         <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"
                     Margin="5,10,0,0"  Orientation="Horizontal">
-            <TextBlock  Text="選擇COM" Margin="0,0,5,0" Height="20" FontSize="15" TextWrapping="Wrap" ></TextBlock>
-            <ComboBox  Name= "COMSelector" Height="25" Width="90" MouseEnter="COMSelector_MouseEnter" />
-            <Button  Name="btn_Connect" Margin="10,0,0,0" Width="70" FontSize="15" Height="35" IsEnabled="False" Click="Connect_Button_Click">連線</Button>
+            <ComboBox  x:Name= "COMSelector" Height="25" Width="90" />
+            <Button  x:Name="btn_Connect" Margin="10,0,0,0" Width="42" FontSize="15" Height="35" IsEnabled="False" Click="Connect_Button_Click" Content="連線"/>
+            <Button  x:Name="btn_refresh" Width="96" FontSize="15" Height="35" Click="Refresh_Button_Click" Content="重新整理"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
-            <Button  Name="btn_clear" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="Btn_Clear_Click">清除資料</Button>
-            <Button  Name="btn_viewAll" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_viewAll_Click">查看所有資料</Button>
-            <Button  Name="btn_setTime" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_setTime_Click">設定時間</Button>
-            <Button  Name="btn_startRecording" Margin="0,10,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_startRecording_Click">開始記錄</Button>
-            <Button  Name="btn_stopToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_stopToUART_Click">中斷至 UART</Button>
-            <Button  Name="btn_resetToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_resetToUART_Click">重設為 UART</Button>
-            <Button  Name="btn_ResetToBLE" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_ResetToBLE_Click">重設為 BLE</Button>
+            <Button  x:Name="btn_clear" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="Btn_Clear_Click" Content="清除資料"/>
+            <Button  x:Name="btn_viewAll" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_viewAll_Click" Content="查看所有資料"/>
+            <Button  x:Name="btn_setTime" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_setTime_Click" Content="設定時間"/>
+            <Button  x:Name="btn_startRecording" Margin="0,10,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_startRecording_Click" Content="開始記錄"/>
+            <Button  x:Name="btn_stopToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_stopToUART_Click" Content="中斷至 UART"/>
+            <Button  x:Name="btn_resetToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_resetToUART_Click" Content="重設為 UART"/>
+            <Button  x:Name="btn_ResetToBLE" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_ResetToBLE_Click" Content="重設為 BLE"/>
+            <Button  x:Name="btn_Say012" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_Say012_Click" Content="說012" />
+
         </StackPanel>
         <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Margin="30,30,30,30">
-            <TextBlock Name="txtblk" Text="TextBlock" TextWrapping="Wrap"/>
+                    Margin="10,10,10,10">
+
+        </StackPanel>
+        <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="20,20,0,0">
+            <CheckBox x:Name="checkbox_verbose" Content="Verbose text"/>
         </StackPanel>
 
     </Grid>
-            
+
 </Window>

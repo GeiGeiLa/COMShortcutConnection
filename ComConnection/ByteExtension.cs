@@ -20,5 +20,22 @@ namespace ComConnection
             }
             return s.ToString();
         }
+        public unsafe static byte[] FastConcat(this byte[] src1, int src1Offset, int src1Count, byte[] src2, int src2Offset, int src2Count )
+        {
+            byte[] target = new byte[src1Count + src2Count];
+            int index = 0;
+            fixed(byte* s1 = src1, s2 = src2, t = target)
+            {
+                for(int i = 0; i < src1Count; i ++, index++)
+                {
+                    t[index] = s1[i];
+                }
+                for(int i = 0; i < src2Count; i++, index++)
+                {
+                    t[index] = s2[i];
+                }
+            }
+            return target;
+        }
     }
 }

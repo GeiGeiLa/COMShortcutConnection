@@ -13,7 +13,7 @@ using static ComConnection.Commands;
 namespace ComConnection
 {
 
-    class COMConnection : IDisposable
+    class COMConnection : ICOMConnection
     {
         /// <summary>
         /// 每過幾毫秒就讀取資料 
@@ -35,7 +35,7 @@ namespace ComConnection
         /// <summary>
         /// 是否正在連線
         /// </summary>
-        public bool IsConnected
+        public virtual bool IsConnected
         {
             get
             {
@@ -51,8 +51,7 @@ namespace ComConnection
             CurrentPort = new SerialPort(ComString, baudRate);
             COM_name = ComString;
             this.ListenInterval = listenIntervalMs < 100 ? listenIntervalMs : 1000;
-            MessageInBytes = new byte[NumOfBytes];
-
+            MessageInBytes = new byte[300];
         }
 
         /// <exception cref="InvalidOperationException"> 已經有其他連線時丟出 </exception>
@@ -74,23 +73,17 @@ namespace ComConnection
             CurrentPort.Close();
         }
         /// <summary>
-        /// 為了要搭配 using statement，需要實作 IDisposable 的 Dispose()
+        /// 斷開連線並且清除資源
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             this.Disconnect();
             CurrentPort.Dispose();
         }
-        /// <summary>只給內部操作檢查連線狀況用，失去連線時拋出Exception</summary>
-        /// <exception cref="IOException">  </exception>
-        protected void CheckConnection()
-        {
-            if (!IsConnected) throw new IOException(ConnectionLost);
-        }
         /// <summary>
         /// 還有沒有東西可以讀取
         /// </summary>
-        public bool HasThingToRead
+        public virtual bool HasThingToRead
         {
             get => (CurrentPort.BytesToRead > 0);
         }
@@ -98,9 +91,8 @@ namespace ComConnection
         /// 直接讀出 buffer 所有內容
         /// </summary>
         /// <returns>String.Empty When nothing to read</returns>
-        public string ReadAllContent()
+        public virtual string ReadAllContent()
         {
-            CheckConnection();
             return HasThingToRead ? 
                 CurrentPort.ReadExisting():
                 "";
@@ -111,7 +103,6 @@ namespace ComConnection
         /// <returns>byte collection</returns>
         public IEnumerable<byte> ReadBytes()
         {
-            CheckConnection();
             int byteElement;
             while( (byteElement = CurrentPort.ReadByte()) != -1 )
             {
@@ -130,6 +121,9 @@ namespace ComConnection
         /// <summary>
         /// 寫入指令到COM port
         /// </summary>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
         /// <param name="count"></param>
