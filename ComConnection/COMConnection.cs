@@ -42,7 +42,7 @@ namespace ComConnection
                 return CurrentPort.IsOpen;
             }
         }
- 
+
         /// <summary>
         /// </summary>
         /// <param name="ComString">COM的名稱</param>        
@@ -93,8 +93,8 @@ namespace ComConnection
         /// <returns>String.Empty When nothing to read</returns>
         public virtual string ReadAllContent()
         {
-            return HasThingToRead ? 
-                CurrentPort.ReadExisting():
+            return HasThingToRead ?
+                CurrentPort.ReadExisting() :
                 "";
         }
         /// <summary>
@@ -104,19 +104,23 @@ namespace ComConnection
         public IEnumerable<byte> ReadBytes()
         {
             int byteElement;
-            while( (byteElement = CurrentPort.ReadByte()) != -1 )
+            while ((byteElement = CurrentPort.ReadByte()) != -1)
             {
                 yield return (byte)byteElement;
             }
         }
-        /// <summary>
-        /// 將接收到的訊息寫入buffer
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public void PrintCOMMessage(object sender, SerialDataReceivedEventArgs e)
-        {
 
+        /// <summary>
+        /// Set DataReceived event
+        /// </summary>
+        /// <param name="handler"></param>
+        /// <param name="p"></param>
+        public void SetEventHandler(SerialDataReceivedEventHandler handler, SerialPort? p = null)
+        {
+            if (p == null)
+                CurrentPort.DataReceived += handler;
+            else
+                p.DataReceived += handler;
         }
         /// <summary>
         /// 寫入指令到COM port

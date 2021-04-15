@@ -119,7 +119,7 @@ namespace ComConnection
                 }
                 catch(UnauthorizedAccessException uex)
                 {
-                    MessageBox.Show(ConnectionFailed + "，有其他程式正在占用此port!","連線錯誤", 
+                    MessageBox.Show(ConnectionFailed + "，有其他程式正在占用此port!", uex.Message , 
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
@@ -144,7 +144,7 @@ namespace ComConnection
                 Connection!.WriteBytes(buffer, 0, buffer.Length);
                 toggleCommandButtons(false);
             }
-            catch(InvalidOperationException ivo)
+            catch
             {
                 ShowErrorMessage(ConnectionLost, "請重新連線");
                 Connection?.Dispose();
@@ -170,7 +170,7 @@ namespace ComConnection
                 OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
                 toggleCommandButtons(false);
             }
-            catch(InvalidOperationException iv)
+            catch
             {
                 ShowErrorMessage(ConnectionLost, "");
                 Connection?.Dispose();
@@ -194,7 +194,7 @@ namespace ComConnection
                 OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
                 toggleCommandButtons(false);
             }
-            catch (InvalidOperationException iv)
+            catch
             {
                 ShowErrorMessage(ConnectionLost, "");
                 Connection?.Dispose();
@@ -326,7 +326,7 @@ namespace ComConnection
 
                     }
                 }
-                catch (ArgumentException aex)
+                catch
                 {
                     Connection!.Dispose();
                 }

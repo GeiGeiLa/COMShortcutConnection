@@ -37,5 +37,33 @@ namespace ComConnection
             }
             return target;
         }
+        /// <summary>
+        /// Convert payload to intger value byte by byte
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="isLittleEndian"></param>
+        /// <returns></returns>
+        public static int CalcByteArrayValue(byte[] payload, bool isLittleEndian = true)
+        {
+            int value = 0;
+            if(isLittleEndian)
+            {
+                foreach (var i in Enumerable.Range(0, payload.Length))
+                {
+                    // 1 byte == 8 bits
+                    value += ( payload[i] << (8 * i) );
+                }
+            }
+            else
+            {
+                int lastIndex = payload.Length - 1;
+                foreach (var i in Enumerable.Range(0, payload.Length))
+                {
+                    // 1 byte == 8 bits
+                    value += ( payload[lastIndex - i] << (8 * i) );
+                }
+            }
+            return value;
+        }
     }
 }
