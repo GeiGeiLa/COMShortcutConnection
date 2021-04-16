@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 #nullable enable
 namespace ComConnection
 {
-    readonly struct Commands
+    readonly struct CommandExplanations
     {
         /// <summary>
         /// Suffix for all commands except those marked as WHOLE

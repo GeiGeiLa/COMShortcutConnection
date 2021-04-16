@@ -8,13 +8,21 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 // My using directives
 using static ComConnection.StringLiterals;
-using static ComConnection.Commands;
+using static ComConnection.CommandExplanations;
 #nullable enable
 namespace ComConnection
 {
 
     class COMConnection : ICOMConnection
     {
+        /// <summary>
+        /// If COM port is busy, WriteBytes method will do nothing and discard your commands
+        /// Becoming free when ack message(DataReceivedEvent) received
+        /// </summary>
+        public bool IsBusy
+        {
+            get; private set;
+        }
         /// <summary>
         /// 每過幾毫秒就讀取資料 
         /// </summary>
@@ -52,6 +60,10 @@ namespace ComConnection
             COM_name = ComString;
             this.ListenInterval = listenIntervalMs < 100 ? listenIntervalMs : 1000;
             MessageInBytes = new byte[300];
+            CurrentPort.DataReceived += (object s, SerialDataReceivedEventArgs e) =>
+            {
+                IsBusy = false;
+            };
         }
 
         /// <exception cref="InvalidOperationException"> 已經有其他連線時丟出 </exception>
@@ -123,7 +135,7 @@ namespace ComConnection
                 p.DataReceived += handler;
         }
         /// <summary>
-        /// 寫入指令到COM port
+        /// 寫入指令到COM port, =>true:success
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
@@ -131,15 +143,18 @@ namespace ComConnection
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
         /// <param name="count"></param>
-        public void WriteBytes(byte[] buffer, int offset , int count )
+        public bool WriteBytes(byte[] buffer, int offset , int count )
         {
             try
             {
+                if (IsBusy) return false;
                 this.CurrentPort.Write(buffer, offset, count);
-
+                IsBusy = true;
+                return true;
             }catch(IOException ioex)
             {
                 Debug.WriteLine(ioex.Message);
+                return false;
             }
         }
         public void Write(byte cmdByte, int offset, int count)

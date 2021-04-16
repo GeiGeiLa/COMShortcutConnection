@@ -32,7 +32,7 @@ namespace ComConnection
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
         /// <param name="count"></param>
-        void WriteBytes(byte[] buffer, int offset, int count);
+        bool WriteBytes(byte[] buffer, int offset, int count);
 
         /// <summary>
         /// What do when received ack message from Port

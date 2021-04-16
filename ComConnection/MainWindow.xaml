@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ComConnection"
         mc:Ignorable="d"
-        Title="MainWindow" Height="565" Width="800" ResizeMode="NoResize">
+        Title="MainWindow" Height="585" Width="800" ResizeMode="NoResize">
     <Grid Margin="0,0,0,-5">
         <!--Definition-->
         <Grid.RowDefinitions>
@@ -22,7 +22,7 @@
 
         <!--Panel-->
         <Border Grid.Row="0" Grid.Column="1" Background="Transparent" Grid.RowSpan="2">
-            <ScrollViewer>
+            <ScrollViewer x:Name="scrollViewer">
                 <TextBox x:Name="txtblk" Text="TextBlock" BorderThickness="0" Background="Transparent" IsReadOnly="True"
                          TextWrapping="Wrap" Margin="10,10,10,10" FontFamily="Consolas" FontSize="14" FontWeight="Normal" Height="442" Width="503"/>
             </ScrollViewer>
@@ -59,8 +59,10 @@
                     Margin="10,10,10,10">
 
         </StackPanel>
-        <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="20,20,0,0">
-            <CheckBox x:Name="checkbox_verbose" Content="Verbose text"/>
+        <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" Margin="20,20,0,0" 
+                    CanHorizontallyScroll="False" Orientation="Horizontal">
+            <CheckBox x:Name="checkbox_verbose" Content="Verbose text" Click="checkbox_verbose_Click"/>
+            <CheckBox x:Name="checkbox_autoscroll" Content="Auto scroll" Click="checkbox_autoscroll_Click" />
         </StackPanel>
 
     </Grid>
