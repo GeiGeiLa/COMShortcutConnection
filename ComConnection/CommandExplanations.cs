@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 #nullable enable
 namespace ComConnection
 {
-    readonly struct CommandExplanations
+    public static class CommandExplanations
     {
         /// <summary>
         /// Suffix for all commands except those marked as WHOLE
@@ -27,7 +27,7 @@ namespace ComConnection
         public static readonly ImmutableArray<byte> ackRestart_Whole = ImmutableArray.Create<byte>(new byte[]{ 0x02 });
         // Erase
         public static readonly ImmutableArray<byte> setErase_Prefix_Payload = ImmutableArray.Create<byte>(new byte[]{ 0x55, 0x03, 0x02, 0x00, 0xFF });
-        public static readonly ImmutableArray<byte> ackErase_Prefix_Payload = ImmutableArray.Create<byte>(new byte[]{0x55,0x03,0x01});
+        public static readonly ImmutableArray<byte> ackErase_Prefix = ImmutableArray.Create<byte>(new byte[]{0x55,0x03,0x01});
         public static readonly ImmutableArray<byte> ackErase_Error_Payload = ImmutableArray.Create<byte>(new byte[]{ 0x00, 0xAA });
         public static readonly ImmutableArray<byte> ackErase_InProgress_Payload = ImmutableArray.Create<byte>(new byte[]{ 0x01, 0xAA });
         public static readonly ImmutableArray<byte> ackErase_Success_Payload = ImmutableArray.Create<byte>(new byte[]{ 0x02, 0xAA });
@@ -48,24 +48,136 @@ namespace ComConnection
         public static readonly ImmutableArray<byte> setToUART_Whole = ImmutableArray.Create<byte>(new byte[]{0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA});
         public static readonly ImmutableArray<byte> ackToUART_Whole = ImmutableArray.Create<byte>(new byte[]{ 0x55, 0x06, 0x00, 0x00, 0xAA });
         /// <summary>
+        /// If some ack message indicates that COM is busy, add it to this collection
+        /// </summary>
+        /// <returns></returns>
+        public static List<IEnumerable<byte> > AcksThatSuppressButtonToggling;
+        static CommandExplanations()
+        {
+            AcksThatSuppressButtonToggling = new List<IEnumerable<byte>>();
+            // If you want to add element to this list, please do it in your client 
+        }
+
+        public static IEnumerable<byte> ConcatToIEnumerable(this ImmutableArray<byte> obj, params ImmutableArray<byte>[] imarrays)
+        {
+            foreach (var o in obj)
+            {
+                yield return o;
+            }
+            foreach(var arr in imarrays)
+            {
+                foreach(var element in arr)
+                {
+                    yield return element;
+                }
+            }
+        }
+        public static IEnumerable<byte> ConcatToIEnumerable(params ImmutableArray<byte>[] imarrays)
+        {
+            foreach (var arr in imarrays)
+            {
+                foreach (var element in arr)
+                {
+                    yield return element;
+                }
+            }
+        }
+
+        /// <summary>
         /// 根據給定的Payload片段去解讀目前ACC有幾頁資料
         /// </summary>
-        /// <exception cref="FormatException"></exception>
-        /// <param name="PayloadSegment">必須傳進Payload片段，而不是整個ack message</param>
+        /// <param name="PayloadSegment">傳進Payload片段，而不是整個ack message</param>
         /// <returns>頁面總數</returns>
-        public static int NumberOfPages(string PayloadSegment)
+        public static int NumberOfPages(byte[] payload, int startIndex, int count, bool isBigEndian)
         {
-            if (PayloadSegment.Length > 512) throw new ArgumentException("Payload " + PayloadSegment ?? "null payload" + " is illegal");
-            List<byte> payloadBytes = new();
-            for(int d = PayloadSegment.Length -2; d >= 0 ; d -= 2)
-            {
-
-            }
-            return 0;
+            return payload.ToInt(startIndex, count, isBigEndian);
         }
-        public static int NumberOfPages(byte[] PayloadSegment)
-        { 
-            return 0;
+        public static string MeaningOfAck(byte[] message, Source source)
+        {
+            if (message.Length == 1 && source == Source.Receive)// espacially for ack message for changing mode
+            {
+                return "Mode changed";
+            }
+            const string InvalidPayloadError = "Invalid payload at [3]: ";
+            const int payloadIndex = 3;
+            string explanation;
+            // message[1] is the command byte
+            switch (message[1])
+            {
+                case 0x00:// say hello
+                    explanation = (source == Source.Receive) ? "Hello! from nRF52" : "Try to say hello";
+                    break;
+                case 0x01:// set time
+                    explanation = (source == Source.Receive) ?
+                    message[payloadIndex] switch
+                    {
+                        0x00 => "Error while setting time",
+                        0x01 => "Date time is updated successfully",
+                        _ => throw new ArgumentException(InvalidPayloadError + message[3])
+                    }
+                    : "Setting time";
+                    break;
+                // no 0x02!!!
+                case 0x03:// erase mode
+                    explanation = (source == Source.Receive) ?
+                        message[payloadIndex] switch
+                        {
+                            0x00 => "not in initial mode!",
+                            0X01 => "Erase in progress, please wait!",
+                            0x02 => "Erase DONE!",
+                            _ => throw new ArgumentException(InvalidPayloadError + message[3])
+                        } :
+                        "Try to erase memory";
+                    break;
+                case 0x04: // Get number of pages
+                    const int payloadLength = 4;
+                    if (source == Source.Send)
+                    {
+                        explanation = "Acquiring number of pages";
+                        break;
+                    }
+                    int numOfPages = message.ToInt(payloadIndex, payloadLength, isBigEndian: false);
+                    explanation = "Num of pages in nRF52:" + numOfPages;
+                    break;
+                // TODO: implement explanation of page data
+                case 0x05: // Get data from specified page
+                    if (source == Source.Send)
+                    {
+                        explanation = "Retrieving data";
+                        break;
+                    }
+                    if (message[2] == 0xFF) // message length: return 1 on error 
+                    {
+                        explanation = "Raw:";
+                        for (int i = payloadIndex; i < message.Length - 2; i++)
+                        {
+                            explanation += message[i] + '-';
+                        }
+                        break; // for readability improvement only
+                    }
+                    else // erro occurred
+                    {
+                        explanation = message[payloadIndex] switch
+                        {
+                            0x00 => "Read not initial error",
+                            0x01 => "read error",
+                            _ => throw new ArgumentException(InvalidPayloadError + message[payloadIndex])
+                        };
+                    }
+                    break;
+                case 0x06: // to UART
+                    if (source == Source.Send)
+                    {
+                        explanation = "Switching to UART";
+                        break;
+                    }
+                    explanation = message[payloadIndex] == 0x00 ? "To uART" :
+                        throw new ArgumentException(InvalidPayloadError + message[payloadIndex]);
+                    break;
+                default:
+                    throw new ArgumentException("Unknown command byte:" + message[1]);
+            }
+            return explanation;
         }
     }
 }

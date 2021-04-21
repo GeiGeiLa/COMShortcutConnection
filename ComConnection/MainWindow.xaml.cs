@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
+using System.Collections.Immutable;
 using static ComConnection.StringLiterals;
 using static ComConnection.CommandExplanations;
 using System.IO.Ports;
@@ -38,7 +39,7 @@ namespace ComConnection
         public string SelectedCOMPort { get; private set; }
         public MainWindow()
         {
-            MessageInBytes = new byte[NumOfBytes];
+            MessageInBytes = Array.Empty<byte>();
             this.SelectedCOMPort = new("");
             InitializeComponent();
             RefreshCOMPorts(autoSetWhenUniquePort:true);
@@ -46,8 +47,9 @@ namespace ComConnection
             { btn_clear, btn_ResetToBLE, btn_resetToUART, btn_setTime, btn_startRecording, btn_stopToUART, btn_viewAll,
             btn_Say012 };
             txtblk.Text = "";
-
-
+            //suppress button toggle when erase in progress message received
+            AcksThatSuppressButtonToggling.Add(ConcatToIEnumerable(ackErase_Prefix, ackErase_InProgress_Payload, Suffix));
+            AcksThatSuppressButtonToggling.Add(ConcatToIEnumerable(ackSay012_Whole));
 
         }
 
@@ -88,6 +90,7 @@ namespace ComConnection
                 COMSelector!.IsEnabled = true;
                 this.RefreshCOMPorts();
                 btn_Connect.Content = "連線";
+                return;
             }
             // Not connected
             else
@@ -108,8 +111,11 @@ namespace ComConnection
                         (object sender, SerialDataReceivedEventArgs e) =>
                         {
                             int messageLength = Connection!.CurrentPort.BytesToRead;
+                            this.MessageInBytes = new byte[messageLength];
                             Connection!.CurrentPort.Read(this.MessageInBytes, 0, messageLength);
                             string s = BitConverter.ToString(this.MessageInBytes, 0, messageLength);
+                            // Must use begin invoke bacause Event handler is not called in Main thread
+                            // Or InvalidOperationException will be thrown
                             Dispatcher.BeginInvoke(new Action(() =>
                             {
                                 if(!isVerbose)
@@ -120,8 +126,18 @@ namespace ComConnection
                                 {
                                     OutputWindowVerbose(s, Source.Receive);
                                 }
-                                toggleCommandButtons(true);
-                            }));
+                                // DO NOT toggle on button when receive "erasing in progress" message
+                                if(AcksThatSuppressButtonToggling.ContainsIEumerableObject(MessageInBytes))
+                                {
+                                    toggleCommandButtons(false);
+                                    Debug.WriteLine("Waiting for process");
+                                    MessageBox.Show("This is taking about 3 mins, please wait in patience");
+                                }
+                                else
+                                {
+                                    toggleCommandButtons(true);
+                                }
+                            }));// end event handle settings
                         }
                     );
                     Connection.Connect();
@@ -143,10 +159,11 @@ namespace ComConnection
                     MessageBox.Show(ConnectionFailed + "，有其他程式正在占用此port!", uex.Message , 
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+                await Task.Run(() => { Task.Delay(3000); });
+                toggleCommandButtons(Connection!.IsConnected);
+                btn_Connect.IsEnabled = true;
             }
-            await Task.Run( () => { Task.Delay(2000);} );
-            toggleCommandButtons( Connection?.IsConnected ?? false );
-            btn_Connect.IsEnabled = true;
+
         }
         private void toggleCommandButtons(bool shouldOpen)
         {
@@ -157,6 +174,11 @@ namespace ComConnection
         }
         private void Btn_Clear_Click(object sender, RoutedEventArgs e)
         {
+            if(Connection!.IsBusy)
+            {
+                ShowErrorMessage("Still busy, please wait",String.Empty);
+                return;
+            }
             txtblk.Text += seperator + "\n";
             var buffer = new byte[setErase_Prefix_Payload.Length + Suffix.Length];
             Buffer.BlockCopy(setErase_Prefix_Payload.ToArray(), 0, buffer, 0, setErase_Prefix_Payload.Length);
@@ -195,7 +217,6 @@ namespace ComConnection
                 if(isVerbose)
                 {
                     OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
-
                 }
                 else
                 {
@@ -252,18 +273,11 @@ namespace ComConnection
             txtblk.Text += seperator + "\n";
         }
 
-        public IEnumerable<byte> reversedBytes(IEnumerable<byte> bts)
-        {
-            for (int i = bts.Count() -1; i >= 0; i--)
-            {
-                yield return bts.ElementAt(i);
-            }
-        }
+
         private void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {
             RefreshCOMPorts();
         }
-        public enum Source { Send, Receive};
         private void OutputWindowVerbose(string text, Source source)
         {
             string src = (source == Source.Send) ? "i>" : "o<";
@@ -274,103 +288,17 @@ namespace ComConnection
                 scrollViewer.ScrollToEnd();
             }
         }
-        private void OutputWindowSimple(byte[] message, Source source)
+        private void OutputWindowSimple(byte[] message, Source source, bool suppressDebugMessage = false)
         {
+            message.Count();
+            if(!suppressDebugMessage)
+            {
+                Debug.WriteLine(
+                    BitConverter.ToString(message,0,message.Length)
+                    );
+            }
             txtblk.Text += (source == Source.Send) ? "i>" : "o<";
-            if (message.Length == 1 && source == Source.Receive)// espacially for ack message for changing mode
-            {
-                txtblk.Text += "Mode changed\n";
-                return;
-            }
-            try
-            {
-                // message[1] is the command byte
-                switch(message[1])
-                {
-                    case 0x00:// say hello
-                        txtblk.Text += (source == Source.Receive)?"Hello! from nRF52":"Try to say hello";
-                        break;
-                    case 0x01:// set time
-                        txtblk.Text += (source == Source.Receive) ? 
-                        message[3] switch
-                        {
-                            0x00 => "Error while setting time",
-                            0x01 => "Date time is updated successfully",
-                            _ => throw new ArgumentException("Invalid payload at [3]:" + message[3])
-                        } 
-                        : "Setting time";
-                        break;
-                    // no 0x02!!!
-                    case 0x03:// erase mode
-                        txtblk.Text += (source == Source.Receive) ? 
-                            message[3] switch
-                            {
-                                0x01 => "not in initial mode!",
-                                0X02 => "Erase in progress, please wait!",
-                                0x03 => "Erase DONE!",
-                                _ =>  throw new ArgumentException("Invalid payload at [3]:" + message[3])
-                            }:
-                            "Try to erase memory";
-                        break;
-                    case 0x04: // Get number of pages
-                        if(source == Source.Send)
-                        {
-                            txtblk.Text += "Acquiring number of pages";
-                            break;
-                        }
-                        int numOfPages = 0;
-                        // shift += 8: to multiply 
-                        for(int i = 3, shift = 0; i <= message.Length -2; i++, shift+= 8)
-                        {
-                            // message[low byte... hight byte...]
-                            numOfPages += message[i] << shift; 
-                        }
-                        txtblk.Text += "Num of pages in nRF52:" + numOfPages;
-                        break;
-                        // TODO: implement explanation of page data
-                    case 0x05: // Get data from specified page
-                        if(source == Source.Send)
-                        {
-                            txtblk.Text += "Retrieving data";
-                            break;
-                        }
-                        if (message[2] == 0xFF) // message length: return 1 on error 
-                        {
-                            txtblk.Text += "Raw:";
-                            for (int i = 3; i < message.Length - 2; i++)
-                            {
-                                txtblk.Text += message[3] + '-';
-                            }
-                            // will break
-                        }
-                        else // erro occurred
-                        {
-                            txtblk.Text += message[3] switch
-                            {
-                                0x00 => "Read not initial error",
-                                0x01 => "read error",
-                                _ => throw new ArgumentException("Invalid payload at [3]:" + message[3])
-                            };
-                        }
-                        break;
-                    case 0x06: // to UART
-                        if(source == Source.Send)
-                        {
-                            txtblk.Text += "Switching to UART";
-                            break;
-                        }
-                        txtblk.Text += message[3] == 0x00 ? "To uART" :
-                            throw new ArgumentException("Invalid payload at [3]:" + message[3]);
-                        break;
-                    default:
-                        throw new ArgumentException("Unknown command byte:" + message[1]);
-
-                }
-            }
-            catch
-            {
-                Connection!.Dispose();
-            }
+            txtblk.Text += MeaningOfAck(message, source);
             txtblk.Text += "\n";
             if(shouldScroll)
             {
@@ -385,7 +313,6 @@ namespace ComConnection
         private void FixedPointerVSBlockCopy()
         {
             var sw2 = new Stopwatch();
-
             unsafe
             {
                 byte[] buf2 = new byte[0];
@@ -418,7 +345,6 @@ namespace ComConnection
         {
             isVerbose = checkbox_verbose.IsChecked ?? false;
         }
-
         private void checkbox_autoscroll_Click(object sender, RoutedEventArgs e)
         {
             shouldScroll = checkbox_autoscroll.IsChecked ?? false;

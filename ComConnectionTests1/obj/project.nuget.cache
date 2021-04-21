@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "dgSpecHash": "SkZ0e9oJG80TWKo4YE6hFojwai3PdoHWxgHi1FWFsex7eRDl/wRhGtfh/b85aHQkiFPXdg6erNz45gkFT0pk7g==",
+  "success": false,
+  "projectFilePath": "C:\\Fast\\COMShortcutConnection-master\\ComConnectionTests1\\ComConnectionTests1.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1201",
+      "level": "Error",
+      "message": "Project ComConnection is not compatible with net5.0 (.NETCoreApp,Version=v5.0). Project ComConnection supports: net5.0-windows7.0 (.NETCoreApp,Version=v5.0)",
+      "libraryId": "ComConnection",
+      "targetGraphs": [
+        "net5.0"
+      ]
+    }
+  ]
+}
