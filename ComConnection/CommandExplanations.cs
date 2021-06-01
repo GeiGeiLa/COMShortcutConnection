@@ -57,7 +57,11 @@ namespace ComConnection
             AcksThatSuppressButtonToggling = new List<IEnumerable<byte>>();
             // If you want to add element to this list, please do it in your client 
         }
-
+        /// <summary>
+        /// Get a collection which is the combination of all elements of ImmutableArray &lt;byte&gt; params
+        /// </summary>
+        /// <param name="imarrays"></param>
+        /// <returns></returns>
         public static IEnumerable<byte> ConcatToIEnumerable(this ImmutableArray<byte> obj, params ImmutableArray<byte>[] imarrays)
         {
             foreach (var o in obj)
@@ -72,7 +76,12 @@ namespace ComConnection
                 }
             }
         }
-        public static IEnumerable<byte> ConcatToIEnumerable(params ImmutableArray<byte>[] imarrays)
+        /// <summary>
+        /// 回傳IEnumerable&lt;byte&gt;，其元素為所有傳入 ImmutableArray&lt;byte&gt;的所有元素
+        /// </summary>
+        /// <param name="imarrays"></param>
+        /// <returns></returns>
+        public static IEnumerable<byte> ConcatToSingleIEnumearble(params ImmutableArray<byte>[] imarrays)
         {
             foreach (var arr in imarrays)
             {

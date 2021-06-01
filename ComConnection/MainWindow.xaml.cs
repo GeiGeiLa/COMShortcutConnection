@@ -26,20 +26,29 @@ namespace ComConnection
     /// </summary>
     public partial class MainWindow : Window
     {
-        const string seperator = "---------------------------------";
-        private bool isVerbose = false;
-        private bool shouldScroll = false;
-        private const int NumOfBytes = 256;
-        private byte[] MessageInBytes;
+        public const string Seperator = "---------------------------------";
+        /// <summary>
+        /// Whether should output raw message or interpreted message
+        /// </summary>
+        private bool _isVerbose = false;
+        private bool _shouldScroll = false;
+        private const int _NumOfBytes = 256;
+        /// <summary>
+        /// 儲存指令的 buffer
+        /// </summary>
+        private byte[] _messageBytes ;
         Button[] cmdButtons;
         /// <summary>
         /// COMPort connection object
         /// </summary>
         COMConnection? Connection;
+        /// <summary>
+        /// This is just the name of it
+        /// </summary>
         public string SelectedCOMPort { get; private set; }
         public MainWindow()
         {
-            MessageInBytes = Array.Empty<byte>();
+            _messageBytes = Array.Empty<byte>();
             this.SelectedCOMPort = new("");
             InitializeComponent();
             RefreshCOMPorts(autoSetWhenUniquePort:true);
@@ -48,16 +57,15 @@ namespace ComConnection
             btn_Say012 };
             txtblk.Text = "";
             //suppress button toggle when erase in progress message received
-            AcksThatSuppressButtonToggling.Add(ConcatToIEnumerable(ackErase_Prefix, ackErase_InProgress_Payload, Suffix));
-            AcksThatSuppressButtonToggling.Add(ConcatToIEnumerable(ackSay012_Whole));
+            AcksThatSuppressButtonToggling.Add(ConcatToSingleIEnumearble(ackErase_Prefix, ackErase_InProgress_Payload, Suffix));
+            AcksThatSuppressButtonToggling.Add(ConcatToSingleIEnumearble(ackSay012_Whole));
 
         }
 
         /// <summary>
-        /// 重新偵測可用的 COM Port<br></br>
-        /// 若只有一個COM Port可用，則會自動選擇該 Port
+        /// Detect COM Ports that are plugged in to this computer<br/>
+        /// If there is only a single port detected, then it is automatically selected
         /// </summary>
-        /// <returns></returns>
         private void RefreshCOMPorts(bool autoSetWhenUniquePort = false)
         {
             this.SelectedCOMPort = "";
@@ -75,7 +83,11 @@ namespace ComConnection
             }
             
         }
-
+        /// <summary>
+        /// Connected to the selected COM port
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void Connect_Button_Click(object sender, RoutedEventArgs e)
         {
             SelectedCOMPort = COMSelector?.SelectedItem?.ToString() ?? "";
@@ -84,7 +96,8 @@ namespace ComConnection
             toggleCommandButtons(false);
 
             // Connected and try to disconnect
-            if (Connection != null && Connection.IsConnected)
+            bool isConnectionSuccess = Connection != null && Connection.IsConnected;
+            if (isConnectionSuccess)
             {
                 Connection.Dispose();
                 COMSelector!.IsEnabled = true;
@@ -102,44 +115,44 @@ namespace ComConnection
                 }
                 try
                 {
-                    if(Connection != null && Connection.IsConnected)
-                    {
-                        Connection.Dispose();
-                    }
+                    Connection?.Dispose();
                     Connection = new(SelectedCOMPort);
-                    Connection.SetEventHandler(
-                        (object sender, SerialDataReceivedEventArgs e) =>
+                    // Should I use local function instead of delegate? Will it break my code?
+                    //SerialDataReceivedEventHandler handler = delegate
+                    void handler(object sender, SerialDataReceivedEventArgs e)
+                    {
+                        int messageLength = Connection!.CurrentPort.BytesToRead;
+                        this._messageBytes = new byte[messageLength];
+                        Connection!.CurrentPort.Read(this._messageBytes, 0, messageLength);
+                        string s = BitConverter.ToString(this._messageBytes, 0, messageLength);
+                        // Must use begin invoke bacause Event handler is not called in Main thread
+                        // Or InvalidOperationException will be thrown
+                        // Cannot directly pass local function to Invoke(...)
+                        Action actionToInvoke = delegate
                         {
-                            int messageLength = Connection!.CurrentPort.BytesToRead;
-                            this.MessageInBytes = new byte[messageLength];
-                            Connection!.CurrentPort.Read(this.MessageInBytes, 0, messageLength);
-                            string s = BitConverter.ToString(this.MessageInBytes, 0, messageLength);
-                            // Must use begin invoke bacause Event handler is not called in Main thread
-                            // Or InvalidOperationException will be thrown
-                            Dispatcher.BeginInvoke(new Action(() =>
+                            if (!_isVerbose)
                             {
-                                if(!isVerbose)
-                                {
-                                    OutputWindowSimple(this.MessageInBytes, Source.Receive);
-                                }
-                                else
-                                {
-                                    OutputWindowVerbose(s, Source.Receive);
-                                }
-                                // DO NOT toggle on button when receive "erasing in progress" message
-                                if(AcksThatSuppressButtonToggling.ContainsIEumerableObject(MessageInBytes))
-                                {
-                                    toggleCommandButtons(false);
-                                    Debug.WriteLine("Waiting for process");
-                                    MessageBox.Show("This is taking about 3 mins, please wait in patience");
-                                }
-                                else
-                                {
-                                    toggleCommandButtons(true);
-                                }
-                            }));// end event handle settings
-                        }
-                    );
+                                OutputWindowSimple(this._messageBytes, Source.Receive);
+                            }
+                            else
+                            {
+                                OutputWindowVerbose(s, Source.Receive);
+                            }
+                            // DO NOT toggle on button when receive "erasing in progress" message
+                            if (AcksThatSuppressButtonToggling.ContainsIEumerableObject(_messageBytes))
+                            {
+                                toggleCommandButtons(false);
+                                Debug.WriteLine("Waiting for process");
+                                MessageBox.Show("This would take about 3 mins, please wait.");
+                            }
+                            else
+                            {
+                                toggleCommandButtons(true);
+                            }
+                        };// end actionToInvoke
+                        Dispatcher.BeginInvoke(actionToInvoke);// end event handle settings
+                    }// end local function handler
+                    Connection.SetEventHandler(handler);
                     Connection.Connect();
                     btn_Connect.Content = "斷線";
                     byte[] bitarr = setSay012_Whole.ToArray();
@@ -150,21 +163,27 @@ namespace ComConnection
                 }
                 catch (System.IO.IOException ex)
                 {
-                    MessageBox.Show(ConnectionFailed + "，再試試看？");
+                    MessageBox.Show(ConnectionFailed + ". Please retry");
                     Debug.WriteLine("Exception thrown:" + ex.Message);
                     Connection!.Dispose();
                 }
                 catch(UnauthorizedAccessException uex)
                 {
-                    MessageBox.Show(ConnectionFailed + "，有其他程式正在占用此port!", uex.Message , 
+                    MessageBox.Show(ConnectionFailed + ". Is another process using this COM Port?", uex.Message , 
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+                finally
+                {
+                    Connection?.Dispose();
+                    Connection = null;
+                }
                 await Task.Run(() => { Task.Delay(3000); });
-                toggleCommandButtons(Connection!.IsConnected);
+                toggleCommandButtons(Connection?.IsConnected ?? false);
                 btn_Connect.IsEnabled = true;
             }
 
         }
+
         private void toggleCommandButtons(bool shouldOpen)
         {
             foreach(var i in Enumerable.Range(0, cmdButtons.Length))
@@ -179,7 +198,7 @@ namespace ComConnection
                 ShowErrorMessage("Still busy, please wait",String.Empty);
                 return;
             }
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
             var buffer = new byte[setErase_Prefix_Payload.Length + Suffix.Length];
             Buffer.BlockCopy(setErase_Prefix_Payload.ToArray(), 0, buffer, 0, setErase_Prefix_Payload.Length);
             Buffer.BlockCopy(Suffix.ToArray(), 0, buffer, setErase_Prefix_Payload.Length, Suffix.Length);
@@ -197,15 +216,15 @@ namespace ComConnection
         }
         private void btn_Say012_Click(object snder, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
             byte[] bitarr = setSay012_Whole.ToArray();
             Connection!.WriteBytes(bitarr, 0, setSay012_Whole.Length);
-            if (isVerbose) OutputWindowVerbose(BitConverter.ToString(bitarr), Source.Send);
+            if (_isVerbose) OutputWindowVerbose(BitConverter.ToString(bitarr), Source.Send);
             else OutputWindowSimple(bitarr, Source.Send);
         }
         private void btn_viewAll_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
             var sw = new Stopwatch();
             sw.Start();
             var buffer = new byte[setPageSize_Prefix.Length + Suffix.Length];
@@ -214,7 +233,7 @@ namespace ComConnection
             try
             {
                 Connection!.WriteBytes(buffer, 0, buffer.Length);
-                if(isVerbose)
+                if(_isVerbose)
                 {
                     OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
                 }
@@ -233,13 +252,13 @@ namespace ComConnection
 
         private void btn_setTime_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
             ShowErrorMessage("敬啟期待功能開放","");
         }
 
         private void btn_startRecording_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
             var buffer = new byte[setRestart_Prefix.Length + Restart_Record_Payload.Length + Suffix.Length];
             Buffer.BlockCopy(setRestart_Prefix.ToArray(), 0, dst: buffer, 0, count:setRestart_Prefix.Length);
             Buffer.BlockCopy(Restart_Record_Payload.ToArray(), 0, dst: buffer, setRestart_Prefix.Length, Restart_Record_Payload.Length);
@@ -247,7 +266,7 @@ namespace ComConnection
             try
             {
                 Connection!.WriteBytes(buffer, 0, buffer.Length);
-                if (isVerbose) OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
+                if (_isVerbose) OutputWindowVerbose(BitConverter.ToString(buffer), Source.Send);
                 else OutputWindowSimple(buffer, Source.Send);
                 toggleCommandButtons(false);
             }
@@ -260,17 +279,17 @@ namespace ComConnection
 
         private void btn_stopToUART_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
         }
 
         private void btn_resetToUART_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
         }
 
         private void btn_ResetToBLE_Click(object sender, RoutedEventArgs e)
         {
-            txtblk.Text += seperator + "\n";
+            txtblk.Text += Seperator + "\n";
         }
 
 
@@ -282,25 +301,27 @@ namespace ComConnection
         {
             string src = (source == Source.Send) ? "i>" : "o<";
             txtblk.Text += src + text + "\n";
-            if (shouldScroll)
+            if (_shouldScroll)
             {
+#if DEBUG
                 Debug.WriteLine("SCROLL END");
+#endif
                 scrollViewer.ScrollToEnd();
             }
         }
-        private void OutputWindowSimple(byte[] message, Source source, bool suppressDebugMessage = false)
+        private void OutputWindowSimple(byte[] message, Source source)
         {
             message.Count();
-            if(!suppressDebugMessage)
-            {
-                Debug.WriteLine(
+#if DEBUG
+            Debug.WriteLine(
                     BitConverter.ToString(message,0,message.Length)
                     );
-            }
-            txtblk.Text += (source == Source.Send) ? "i>" : "o<";
+            
+#endif
+        txtblk.Text += (source == Source.Send) ? "i>" : "o<";
             txtblk.Text += MeaningOfAck(message, source);
             txtblk.Text += "\n";
-            if(shouldScroll)
+            if(_shouldScroll)
             {
                 Debug.WriteLine("SCROLL END");
                 scrollViewer.ScrollToEnd();
@@ -315,7 +336,7 @@ namespace ComConnection
             var sw2 = new Stopwatch();
             unsafe
             {
-                byte[] buf2 = new byte[0];
+                byte[] buf2 = Array.Empty<byte>();
                 sw2.Start();
 
                 for (int i = 0; i < 10000000; i++)
@@ -343,11 +364,11 @@ namespace ComConnection
 
         private void checkbox_verbose_Click(object sender, RoutedEventArgs e)
         {
-            isVerbose = checkbox_verbose.IsChecked ?? false;
+            _isVerbose = checkbox_verbose.IsChecked ?? false;
         }
         private void checkbox_autoscroll_Click(object sender, RoutedEventArgs e)
         {
-            shouldScroll = checkbox_autoscroll.IsChecked ?? false;
+            _shouldScroll = checkbox_autoscroll.IsChecked ?? false;
         }
     }
 }

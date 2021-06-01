@@ -10,7 +10,7 @@ namespace ComConnection
     /// <summary>
     /// 擴充String class
     /// </summary>
-    public static class ByteExtension
+    public static class Extension
     {
         public static string BytesHexString(this IEnumerable<byte> bts)
         {
@@ -20,6 +20,29 @@ namespace ComConnection
                 s.Append(bt.ToString("X"));
             }
             return s.ToString();
+        }
+        /// <summary>
+        /// Convert DateTime object to byte[] object that is compatible with UART
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+        public static byte[] ToUARTDate(in this DateTime dt)
+        {
+            byte[] payload = new byte[6];
+            const int initialYear = 2000;
+            payload[0] = (byte)(dt.Year - initialYear);
+            payload[1] = (byte)dt.Month;
+            payload[2] = (byte)dt.Day;
+            payload[3] = (byte)dt.Hour;
+            payload[4] = (byte)dt.Minute;
+            payload[5] = (byte)dt.Second;
+            return payload;
+        }
+        public static DateTime ToByteArray(in byte[] payload)
+        {
+            DateTime dt = new(
+                payload[0] + 2000, payload[1], payload[2], payload[3], payload[4], payload[5]);
+            return dt;
         }
         public unsafe static byte[] FastConcat(this byte[] src1, int src1Offset, int src1Count, byte[] src2, int src2Offset, int src2Count )
         {
