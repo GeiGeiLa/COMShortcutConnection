@@ -77,7 +77,7 @@ namespace ComConnection
             }
         }
         /// <summary>
-        /// 回傳IEnumerable&lt;byte&gt;，其元素為所有傳入 ImmutableArray&lt;byte&gt;的所有元素
+        /// return object of IEnumerable&lt;byte&gt; type, whose elements are values of all elements of ImmutableArray&lt;byte&gt;
         /// </summary>
         /// <param name="imarrays"></param>
         /// <returns></returns>
@@ -93,14 +93,19 @@ namespace ComConnection
         }
 
         /// <summary>
-        /// 根據給定的Payload片段去解讀目前ACC有幾頁資料
+        /// Decode the number of data pages available in ACC
         /// </summary>
-        /// <param name="PayloadSegment">傳進Payload片段，而不是整個ack message</param>
-        /// <returns>頁面總數</returns>
+        /// <returns>Number of pages</returns>
         public static int NumberOfPages(byte[] payload, int startIndex, int count, bool isBigEndian)
         {
             return payload.ToInt(startIndex, count, isBigEndian);
         }
+        /// <summary>
+        /// What does the ack says?
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
         public static string MeaningOfAck(byte[] message, Source source)
         {
             if (message.Length == 1 && source == Source.Receive)// espacially for ack message for changing mode

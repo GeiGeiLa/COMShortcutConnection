@@ -34,7 +34,7 @@ namespace ComConnection
         private bool _shouldScroll = false;
         private const int _NumOfBytes = 256;
         /// <summary>
-        /// 儲存指令的 buffer
+        /// buffer that holds hex command string
         /// </summary>
         private byte[] _messageBytes ;
         Button[] cmdButtons;
@@ -43,7 +43,7 @@ namespace ComConnection
         /// </summary>
         COMConnection? Connection;
         /// <summary>
-        /// This is just the name of it
+        /// This is just the name of COM Port
         /// </summary>
         public string SelectedCOMPort { get; private set; }
         public MainWindow()
@@ -99,10 +99,10 @@ namespace ComConnection
             bool isConnectionSuccess = Connection != null && Connection.IsConnected;
             if (isConnectionSuccess)
             {
-                Connection.Dispose();
+                Connection?.Dispose();
                 COMSelector!.IsEnabled = true;
                 this.RefreshCOMPorts();
-                btn_Connect.Content = "連線";
+                btn_Connect.Content = "Connect";
                 return;
             }
             // Not connected
@@ -161,12 +161,14 @@ namespace ComConnection
                     OutputWindowVerbose(BitConverter.ToString(bitarr), Source.Send);
 
                 }
+                // General connection problem
                 catch (System.IO.IOException ex)
                 {
                     MessageBox.Show(ConnectionFailed + ". Please retry");
                     Debug.WriteLine("Exception thrown:" + ex.Message);
-                    Connection!.Dispose();
+                    Connection?.Dispose();
                 }
+                // The COM port is occupiued by another process
                 catch(UnauthorizedAccessException uex)
                 {
                     MessageBox.Show(ConnectionFailed + ". Is another process using this COM Port?", uex.Message , 
@@ -177,6 +179,7 @@ namespace ComConnection
                     Connection?.Dispose();
                     Connection = null;
                 }
+                // Wait to avoid stuck of ACC
                 await Task.Run(() => { Task.Delay(3000); });
                 toggleCommandButtons(Connection?.IsConnected ?? false);
                 btn_Connect.IsEnabled = true;
@@ -209,11 +212,12 @@ namespace ComConnection
             }
             catch
             {
-                ShowErrorMessage(ConnectionLost, "請重新連線");
+                ShowErrorMessage(ConnectionLost, "Please reconnect to ports");
                 Connection?.Dispose();
             }
 
         }
+        // Send a test message to ACC
         private void btn_Say012_Click(object snder, RoutedEventArgs e)
         {
             txtblk.Text += Seperator + "\n";
@@ -222,6 +226,7 @@ namespace ComConnection
             if (_isVerbose) OutputWindowVerbose(BitConverter.ToString(bitarr), Source.Send);
             else OutputWindowSimple(bitarr, Source.Send);
         }
+        // View all data stored in specified ACC memory block
         private void btn_viewAll_Click(object sender, RoutedEventArgs e)
         {
             txtblk.Text += Seperator + "\n";
@@ -253,7 +258,7 @@ namespace ComConnection
         private void btn_setTime_Click(object sender, RoutedEventArgs e)
         {
             txtblk.Text += Seperator + "\n";
-            ShowErrorMessage("敬啟期待功能開放","");
+            ShowErrorMessage("Coming soon...","");
         }
 
         private void btn_startRecording_Click(object sender, RoutedEventArgs e)
@@ -331,6 +336,7 @@ namespace ComConnection
         {
             MessageBox.Show(content, caption, MessageBoxButton.OK, MessageBoxImage.Error);
         }
+        // Something I test if unsafe pointer access is much faster, apperantly not.
         private void FixedPointerVSBlockCopy()
         {
             var sw2 = new Stopwatch();
@@ -361,7 +367,7 @@ namespace ComConnection
             Debug.WriteLine("BlockCopy:" + sw.ElapsedMilliseconds);
             Debug.WriteLine("Fixed pointer:" + sw2.ElapsedMilliseconds);
         }
-
+        // update the state of _isVerbose
         private void checkbox_verbose_Click(object sender, RoutedEventArgs e)
         {
             _isVerbose = checkbox_verbose.IsChecked ?? false;

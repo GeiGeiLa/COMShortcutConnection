@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace ComConnection
 {
     /// <summary>
-    /// 擴充String class
+    /// making extensions to String class
     /// </summary>
     public static class Extension
     {

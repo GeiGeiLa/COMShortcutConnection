@@ -40,19 +40,19 @@
         <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"
                     Margin="5,10,0,0"  Orientation="Horizontal">
             <ComboBox  x:Name= "COMSelector" Height="25" Width="90" />
-            <Button  x:Name="btn_Connect" Margin="10,0,0,0" Width="42" FontSize="15" Height="35" IsEnabled="False" Click="Connect_Button_Click" Content="連線"/>
-            <Button  x:Name="btn_refresh" Width="96" FontSize="15" Height="35" Click="Refresh_Button_Click" Content="重新整理"/>
+            <Button  x:Name="btn_Connect" Margin="10,0,0,0" Width="42" FontSize="15" Height="35" IsEnabled="False" Click="Connect_Button_Click" Content="GO"/>
+            <Button  x:Name="btn_refresh" Width="96" FontSize="15" Height="35" Click="Refresh_Button_Click" Content="refresh"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,20,0,0">
-            <Button  x:Name="btn_clear" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="Btn_Clear_Click" Content="清除資料"/>
-            <Button  x:Name="btn_viewAll" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_viewAll_Click" Content="查看所有資料"/>
-            <Button  x:Name="btn_setTime" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_setTime_Click" Content="設定時間"/>
-            <Button  x:Name="btn_startRecording" Margin="0,10,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_startRecording_Click" Content="開始記錄"/>
-            <Button  x:Name="btn_stopToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_stopToUART_Click" Content="中斷至 UART"/>
-            <Button  x:Name="btn_resetToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_resetToUART_Click" Content="重設為 UART"/>
-            <Button  x:Name="btn_ResetToBLE" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_ResetToBLE_Click" Content="重設為 BLE"/>
-            <Button  x:Name="btn_Say012" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_Say012_Click" Content="說012" />
+            <Button  x:Name="btn_clear" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="Btn_Clear_Click" Content="clear data"/>
+            <Button  x:Name="btn_viewAll" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_viewAll_Click" Content="view all data"/>
+            <Button  x:Name="btn_setTime" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_setTime_Click" Content="set date time"/>
+            <Button  x:Name="btn_startRecording" Margin="0,10,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_startRecording_Click" Content="record"/>
+            <Button  x:Name="btn_stopToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_stopToUART_Click" Content="stop to UART"/>
+            <Button  x:Name="btn_resetToUART" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_resetToUART_Click" Content="restart to UART"/>
+            <Button  x:Name="btn_ResetToBLE" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_ResetToBLE_Click" Content="restart to BLE"/>
+            <Button  x:Name="btn_Say012" Margin="0,0,0,5" Width="120" Height="40" FontSize="16" IsEnabled="False" Click="btn_Say012_Click" Content="say 012" />
 
         </StackPanel>
         <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top"

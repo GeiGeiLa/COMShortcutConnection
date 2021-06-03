@@ -23,37 +23,25 @@ namespace ComConnection
         {
             get; private set;
         }
-        /// <summary>
-        /// 每過幾毫秒就讀取資料 
-        /// </summary>
         public readonly uint ListenInterval;
-        /// <summary>
-        /// 來自 input buffer 的內容
-        /// </summary>
         public byte[] MessageInBytes { get; private set; }
         /// <summary>
-        /// 我們要吐給 COM 的指令，以 byte[1]傳送
+        /// Command that we want to send to ACC
         /// </summary>
         public byte[] CommandBuffer = new byte[1];
         public readonly string COM_name;
         /// <summary>
-        /// SerialPort 連線物件
+        /// SerialPort object
         /// </summary>
         public SerialPort CurrentPort { get; private set; }
-        /// <summary>
-        /// 是否正在連線
-        /// </summary>
         public virtual bool IsConnected
         {
-            get
-            {
-                return CurrentPort.IsOpen;
-            }
+            get => CurrentPort.IsOpen;
         }
 
         /// <summary>
         /// </summary>
-        /// <param name="ComString">COM的名稱</param>        
+        /// <param name="ComString">The name of COM</param>        
         public COMConnection(string ComString, int baudRate = 115200, uint listenIntervalMs = 1000)
         {
             CurrentPort = new SerialPort(ComString, baudRate);
@@ -66,8 +54,8 @@ namespace ComConnection
             };
         }
 
-        /// <exception cref="InvalidOperationException"> 已經有其他連線時丟出 </exception>
-        /// <exception cref="IOException"> 連線失敗時丟出 </exception>
+        /// <exception cref="InvalidOperationException"> Is already connected </exception>
+        /// <exception cref="IOException"> Thrown when cannot connect </exception>
         public virtual void Connect()
         {
             if (IsConnected) throw new InvalidOperationException(InvalidOperation);
@@ -78,29 +66,26 @@ namespace ComConnection
             CurrentPort.Open();
             if (!IsConnected) throw new IOException(ConnectionFailed);
         }
-        /// <exception cref="InvalidOperationException"> 根本沒有連線時丟出 </exception>
+        /// <exception cref="InvalidOperationException"> Connection is empty </exception>
         public virtual void Disconnect()
         {
             if (!IsConnected) return;
             CurrentPort.Close();
         }
-        /// <summary>
-        /// 斷開連線並且清除資源
-        /// </summary>
         public virtual void Dispose()
         {
             this.Disconnect();
             CurrentPort.Dispose();
         }
         /// <summary>
-        /// 還有沒有東西可以讀取
+        /// whether there is something to read
         /// </summary>
         public virtual bool HasThingToRead
         {
             get => (CurrentPort.BytesToRead > 0);
         }
         /// <summary>
-        /// 直接讀出 buffer 所有內容
+        /// Read all contents in buffer
         /// </summary>
         /// <returns>String.Empty When nothing to read</returns>
         public virtual string ReadAllContent()
@@ -110,7 +95,7 @@ namespace ComConnection
                 "";
         }
         /// <summary>
-        /// 讀取Port內容 
+        /// Read Port contents 
         /// </summary>
         /// <returns>byte collection</returns>
         public IEnumerable<byte> ReadBytes()
@@ -135,7 +120,7 @@ namespace ComConnection
                 p.DataReceived += handler;
         }
         /// <summary>
-        /// 寫入指令到COM port, =>true:success
+        /// Write commands to COM port, =>true:success
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
